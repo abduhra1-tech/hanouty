@@ -1,43 +1,15 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
+  "productName": "Hanouty",
+  "version": "0.1.0",
+  "identifier": "com.hanouty.app",
   "build": {
     "beforeDevCommand": "bun run dev",
-    "beforeBuildCommand": "bun run build",
     "devUrl": "http://localhost:1420",
+    "beforeBuildCommand": "bun run build",
     "frontendDist": "../dist"
   },
-  "package": {
-    "productName": "Hanouty",
-    "version": "0.1.0"
-  },
-  "tauri": {
-    "bundle": {
-      "active": true,
-      "identifier": "com.hanouty.app",
-      "icon": [
-        "icons/32x32.png",
-        "icons/128x128.png",
-        "icons/128x128@2x.png",
-        "icons/icon.icns",
-        "icons/icon.ico"
-      ],
-      "resources": [],
-      "copyright": "© 2024 Hanouty",
-      "category": "Business",
-      "shortDescription": "Smart Retail System for Moroccan Shops",
-      "longDescription": "Hanouty - Point of Sale & Inventory Management",
-      "linux": {
-        "deb": {
-          "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0"]
-        }
-      },
-      "windows": {
-        "nsis": {
-          "languages": ["French", "Arabic"],
-          "installMode": "perMachine"
-        }
-      }
-    },
+  "app": {
     "windows": [
       {
         "title": "Hanouty",
@@ -48,6 +20,32 @@
     ],
     "security": {
       "csp": null
+    }
+  },
+  "bundle": {
+    "active": true,
+    "targets": "all",
+    "icon": [
+      "icons/32x32.png",
+      "icons/128x128.png",
+      "icons/128x128@2x.png",
+      "icons/icon.icns",
+      "icons/icon.ico"
+    ],
+    "copyright": "© 2024 Hanouty",
+    "category": "Business",
+    "shortDescription": "Smart Retail System for Moroccan Shops",
+    "longDescription": "Hanouty - Point of Sale & Inventory Management",
+    "linux": {
+      "deb": {
+        "depends": ["libwebkit2gtk-4.1-0", "libgtk-3-0"]
+      }
+    },
+    "windows": {
+      "nsis": {
+        "languages": ["French", "Arabic"],
+        "installMode": "perMachine"
+      }
     }
   }
 }
