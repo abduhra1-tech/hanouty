@@ -1,18 +1,19 @@
 {
   "$schema": "https://schema.tauri.app/config/2",
-  "productName": "tauri-app",
+  "productName": "hanouty",
   "version": "0.1.0",
   "identifier": "com.hanouty.app",
   "build": {
     "beforeDevCommand": "bun run dev",
     "devUrl": "http://localhost:1420",
     "beforeBuildCommand": "bun run build",
-    "frontendDist": "../dist"
+    "frontendDist": "../dist",
+    "devtools": true
   },
   "app": {
     "windows": [
       {
-        "title": "tauri-app",
+        "title": "Hanouty",
         "width": 800,
         "height": 600
       }
