@@ -1,6 +1,6 @@
-import { useState, useEffect } from 'react'
-import { invoke } from '@tauri-apps/api/core'
-import { ProductModal } from '../components/ProductModal'
+import { useState, useEffect } from 'react';
+import { invoke } from '@tauri-apps/api/core';
+import { ProductModal } from '../components/ProductModal';
 
 interface Product {
   id: number;
@@ -10,91 +10,86 @@ interface Product {
 }
 
 export function Products() {
-  const [products, setProducts] = useState<Product[]>([])
-  const [loading, setLoading] = useState(true)
-  const [modalOpen, setModalOpen] = useState(false)
-  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
+  const [products, setProducts] = useState<Product[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [modalOpen, setModalOpen] = useState(false);
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null);
 
   useEffect(() => {
-    loadProducts()
-  }, [])
+    loadProducts();
+  }, []);
 
-  const loadProducts = async () => {
+  async function loadProducts() {
     try {
-      const data = await invoke<Product[]>('get_products')
-      setProducts(data)
+      const data = await invoke<Product[]>('get_products');
+      setProducts(data);
     } catch (error) {
-      console.error('Failed to load products:', error)
+      console.error('Failed to load products:', error);
     } finally {
-      setLoading(false)
+      setLoading(false);
     }
   }
 
-  const handleAddProduct = () => {
-    setEditingProduct(null)
-    setModalOpen(true)
-  }
-
-  const handleEditProduct = (product: Product) => {
-    setEditingProduct(product)
-    setModalOpen(true)
-  }
-
-  const handleDeleteProduct = async (id: number) => {
+  async function handleDelete(id: number) {
     if (confirm('Are you sure you want to delete this product?')) {
-      await invoke('delete_product', { id })
-      loadProducts()
+      try {
+        await invoke('delete_product', { id });
+        await loadProducts();
+      } catch (error) {
+        console.error('Failed to delete product:', error);
+      }
     }
   }
 
-  const handleModalClose = () => {
-    setModalOpen(false)
-    setEditingProduct(null)
+  function handleEdit(product: Product) {
+    setEditingProduct(product);
+    setModalOpen(true);
   }
 
-  const handleModalSuccess = () => {
-    loadProducts()
+  function handleAdd() {
+    setEditingProduct(null);
+    setModalOpen(true);
   }
+
+  if (loading) return <div className="dashboard">Loading products...</div>;
 
   return (
     <div className="dashboard">
-      <h2>📦 Products</h2>
-      <button style={{ marginBottom: '1rem' }} onClick={handleAddProduct}>+ Add Product</button>
-      {loading ? (
-        <p>Loading...</p>
-      ) : (
-        <table className="products-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Name</th>
-              <th>Price (MAD)</th>
-              <th>Stock</th>
-              <th>Actions</th>
+      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: '1rem' }}>
+        <h2>📦 Products</h2>
+        <button onClick={handleAdd}>+ Add Product</button>
+      </div>
+      
+      <table className="products-table">
+        <thead>
+          <tr>
+            <th>Name</th>
+            <th>Price (MAD)</th>
+            <th>Stock</th>
+            <th>Actions</th>
+          </tr>
+        </thead>
+        <tbody>
+          {products.map(product => (
+            <tr key={product.id}>
+              <td>{product.name}</td>
+              <td>{product.price.toFixed(2)}</td>
+              <td>{product.stock}</td>
+              <td>
+                <button onClick={() => handleEdit(product)} style={{ marginRight: '0.5rem' }}>Edit</button>
+                <button className="btn-secondary" onClick={() => handleDelete(product.id)}>Delete</button>
+              </td>
             </tr>
-          </thead>
-          <tbody>
-            {products.map(product => (
-              <tr key={product.id}>
-                <td>{product.id}</td>
-                <td>{product.name}</td>
-                <td>{product.price}</td>
-                <td>{product.stock}</td>
-                <td>
-                  <button style={{ marginRight: '0.5rem' }} onClick={() => handleEditProduct(product)}>Edit</button>
-                  <button className="btn-secondary" onClick={() => handleDeleteProduct(product.id)}>Delete</button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      )}
+          ))}
+        </tbody>
+      </table>
+      
       <ProductModal
         isOpen={modalOpen}
-        onClose={handleModalClose}
-        onSuccess={handleModalSuccess}
+        onClose={() => setModalOpen(false)}
+        onSuccess={loadProducts}
         product={editingProduct}
       />
     </div>
-  )
+  );
 }
