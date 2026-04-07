@@ -1,9 +1,19 @@
 import { useState, useEffect } from 'react'
-import { getProducts, addProduct, deleteProduct, Product } from '../lib/db'
+import { invoke } from '@tauri-apps/api/core'
+import { ProductModal } from '../components/ProductModal'
+
+interface Product {
+  id: number;
+  name: string;
+  price: number;
+  stock: number;
+}
 
 export function Products() {
   const [products, setProducts] = useState<Product[]>([])
   const [loading, setLoading] = useState(true)
+  const [modalOpen, setModalOpen] = useState(false)
+  const [editingProduct, setEditingProduct] = useState<Product | null>(null)
 
   useEffect(() => {
     loadProducts()
@@ -11,7 +21,7 @@ export function Products() {
 
   const loadProducts = async () => {
     try {
-      const data = await getProducts()
+      const data = await invoke<Product[]>('get_products')
       setProducts(data)
     } catch (error) {
       console.error('Failed to load products:', error)
@@ -20,13 +30,29 @@ export function Products() {
     }
   }
 
-  const handleAddProduct = async () => {
-    await addProduct('New Product', 0, 0)
-    loadProducts()
+  const handleAddProduct = () => {
+    setEditingProduct(null)
+    setModalOpen(true)
+  }
+
+  const handleEditProduct = (product: Product) => {
+    setEditingProduct(product)
+    setModalOpen(true)
   }
 
   const handleDeleteProduct = async (id: number) => {
-    await deleteProduct(id)
+    if (confirm('Are you sure you want to delete this product?')) {
+      await invoke('delete_product', { id })
+      loadProducts()
+    }
+  }
+
+  const handleModalClose = () => {
+    setModalOpen(false)
+    setEditingProduct(null)
+  }
+
+  const handleModalSuccess = () => {
     loadProducts()
   }
 
@@ -55,7 +81,7 @@ export function Products() {
                 <td>{product.price}</td>
                 <td>{product.stock}</td>
                 <td>
-                  <button style={{ marginRight: '0.5rem' }}>Edit</button>
+                  <button style={{ marginRight: '0.5rem' }} onClick={() => handleEditProduct(product)}>Edit</button>
                   <button className="btn-secondary" onClick={() => handleDeleteProduct(product.id)}>Delete</button>
                 </td>
               </tr>
@@ -63,6 +89,12 @@ export function Products() {
           </tbody>
         </table>
       )}
+      <ProductModal
+        isOpen={modalOpen}
+        onClose={handleModalClose}
+        onSuccess={handleModalSuccess}
+        product={editingProduct}
+      />
     </div>
   )
 }
