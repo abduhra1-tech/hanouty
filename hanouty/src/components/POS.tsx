@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react';
 import { invoke } from '@tauri-apps/api/core';
+import { ReceiptModal } from './ReceiptModal';
 
 interface Product {
   id: number;
@@ -16,6 +17,16 @@ interface CartItem {
   total: number;
 }
 
+interface ReceiptData {
+  sale_id: number;
+  items: { name: string; quantity: number; price: number; total: number }[];
+  subtotal: number;
+  vat_rate: number;
+  vat_amount: number;
+  total: number;
+  date: string;
+}
+
 export function POS() {
   const [products, setProducts] = useState<Product[]>([]);
   const [cart, setCart] = useState<CartItem[]>([]);
@@ -24,6 +35,8 @@ export function POS() {
   const [vatRate, setVatRate] = useState<number>(20);
   const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: string } | null>(null);
+  const [showReceipt, setShowReceipt] = useState(false);
+  const [lastReceipt, setLastReceipt] = useState<ReceiptData | null>(null);
 
   useEffect(() => {
     loadProducts();
@@ -117,7 +130,21 @@ export function POS() {
       });
       
       if (result.success) {
-        showToast(`Sale completed! Total: ${formatCurrency(result.total)}`, 'success');
+        setLastReceipt({
+          sale_id: result.sale_id,
+          items: cart.map(item => ({
+            name: item.name,
+            quantity: item.quantity,
+            price: item.price,
+            total: item.total
+          })),
+          subtotal: subtotal,
+          vat_rate: vatRate,
+          vat_amount: tax,
+          total: total,
+          date: new Date().toISOString()
+        });
+        setShowReceipt(true);
         setCart([]);
         await loadProducts();
       }
@@ -263,6 +290,14 @@ export function POS() {
         <div className={`toast toast-${toast.type}`} onClick={() => setToast(null)}>
           {toast.message}
         </div>
+      )}
+      
+      {showReceipt && lastReceipt && (
+        <ReceiptModal
+          isOpen={showReceipt}
+          onClose={() => setShowReceipt(false)}
+          receipt={lastReceipt}
+        />
       )}
     </div>
   );
