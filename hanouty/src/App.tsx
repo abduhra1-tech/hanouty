@@ -3,6 +3,7 @@ import { Dashboard } from './pages/Dashboard'
 import { Products } from './pages/Products'
 import { Sales } from './pages/Sales'
 import { Settings } from './pages/Settings'
+import { ShopSettings } from './pages/ShopSettings'
 import { POS } from './components/POS'
 
 function App() {
@@ -19,6 +20,7 @@ function App() {
           <Route path="/pos" element={<POS />} />
           <Route path="/sales" element={<Sales />} />
           <Route path="/settings" element={<Settings />} />
+          <Route path="/shop-settings" element={<ShopSettings />} />
         </Routes>
       </div>
     </BrowserRouter>
