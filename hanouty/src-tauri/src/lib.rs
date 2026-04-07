@@ -130,30 +130,57 @@ fn add_sale(total: f64) -> Result<(), String> {
 }
 
 #[tauri::command]
-fn create_sale(sale: NewSale) -> Result<(), String> {
-    let conn = get_conn()?;
+fn create_sale(sale: NewSale) -> Result<serde_json::Value, String> {
+    let conn = Connection::open("hanouty.db").map_err(|e| e.to_string())?;
     
-    conn.execute(
+    let tx = conn.transaction().map_err(|e| e.to_string())?;
+    
+    for item in &sale.items {
+        let current_stock: i32 = tx.query_row(
+            "SELECT stock FROM products WHERE id = ?1",
+            params![item.product_id],
+            |row| row.get(0)
+        ).map_err(|e| e.to_string())?;
+        
+        if current_stock < item.quantity {
+            return Err(format!("Insufficient stock for product ID {}: available {}, requested {}", 
+                item.product_id, current_stock, item.quantity));
+        }
+    }
+    
+    tx.execute(
         "INSERT INTO sales (total) VALUES (?1)",
         params![sale.total],
     ).map_err(|e| e.to_string())?;
     
-    let sale_id = conn.last_insert_rowid();
+    let sale_id = tx.last_insert_rowid();
     
-    for item in sale.items {
-        conn.execute(
+    for item in &sale.items {
+        tx.execute(
             "INSERT INTO sale_items (sale_id, product_id, quantity, price_at_sale) 
              VALUES (?1, ?2, ?3, ?4)",
             params![sale_id, item.product_id, item.quantity, item.price],
         ).map_err(|e| e.to_string())?;
         
-        conn.execute(
-            "UPDATE products SET stock = stock - ?1 WHERE id = ?2",
+        let updated = tx.execute(
+            "UPDATE products SET stock = stock - ?1 
+             WHERE id = ?2 AND stock >= ?1",
             params![item.quantity, item.product_id],
         ).map_err(|e| e.to_string())?;
+        
+        if updated == 0 {
+            tx.rollback().map_err(|e| e.to_string())?;
+            return Err(format!("Stock update failed for product {}", item.product_id));
+        }
     }
     
-    Ok(())
+    tx.commit().map_err(|e| e.to_string())?;
+    
+    Ok(serde_json::json!({
+        "success": true,
+        "sale_id": sale_id,
+        "total": sale.total
+    }))
 }
 
 #[tauri::command]
