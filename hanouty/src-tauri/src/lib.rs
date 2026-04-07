@@ -218,6 +218,37 @@ fn get_vat_rate() -> Result<f64, String> {
 }
 
 #[tauri::command]
+fn get_shop_settings() -> Result<serde_json::Value, String> {
+    let conn = Connection::open("hanouty.db").map_err(|e| e.to_string())?;
+    
+    let settings = [
+        "shop_name", "shop_address", "shop_phone", "shop_email"
+    ];
+    
+    let mut result = serde_json::Map::new();
+    for key in settings {
+        let value: String = conn.query_row(
+            "SELECT value FROM settings WHERE key = ?1",
+            params![key],
+            |row| row.get(0)
+        ).unwrap_or_else(|_| "".to_string());
+        result.insert(key.to_string(), serde_json::Value::String(value));
+    }
+    
+    Ok(serde_json::Value::Object(result))
+}
+
+#[tauri::command]
+fn update_shop_setting(key: String, value: String) -> Result<(), String> {
+    let conn = Connection::open("hanouty.db").map_err(|e| e.to_string())?;
+    conn.execute(
+        "INSERT OR REPLACE INTO settings (key, value) VALUES (?1, ?2)",
+        params![key, value],
+    ).map_err(|e| e.to_string())?;
+    Ok(())
+}
+
+#[tauri::command]
 fn get_settings() -> Result<Vec<Setting>, String> {
     let conn = get_conn()?;
     let mut stmt = conn.prepare("SELECT key, value FROM settings")
@@ -269,6 +300,8 @@ pub fn run() {
             create_sale,
             get_sales_history,
             get_vat_rate,
+            get_shop_settings,
+            update_shop_setting,
             get_settings,
             update_setting
         ])
