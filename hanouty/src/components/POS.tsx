@@ -21,10 +21,13 @@ export function POS() {
   const [cart, setCart] = useState<CartItem[]>([]);
   const [selectedProduct, setSelectedProduct] = useState<number>(0);
   const [quantity, setQuantity] = useState<number>(1);
+  const [vatRate, setVatRate] = useState<number>(20);
+  const [loading, setLoading] = useState(false);
   const [toast, setToast] = useState<{ message: string; type: string } | null>(null);
 
   useEffect(() => {
     loadProducts();
+    loadVatRate();
   }, []);
 
   async function loadProducts() {
@@ -32,25 +35,44 @@ export function POS() {
       const data = await invoke<Product[]>('get_products');
       setProducts(data);
     } catch (error) {
-      console.error('Failed to load products:', error);
+      showToast('Failed to load products', 'error');
     }
   }
 
-  function addToCart() {
+  async function loadVatRate() {
+    try {
+      const rate = await invoke<number>('get_vat_rate');
+      setVatRate(rate);
+    } catch (error) {
+      console.error('Failed to load VAT rate:', error);
+    }
+  }
+
+  function showToast(message: string, type: string) {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000);
+  }
+
+  async function addToCart() {
     const product = products.find(p => p.id === selectedProduct);
     if (!product) return;
     
     if (quantity > product.stock) {
-      setToast({ message: `Only ${product.stock} in stock`, type: 'error' });
+      showToast(`Only ${product.stock} in stock`, 'error');
       return;
     }
     
     const existingItem = cart.find(item => item.product_id === product.id);
     
     if (existingItem) {
+      const newQuantity = existingItem.quantity + quantity;
+      if (newQuantity > product.stock) {
+        showToast(`Cannot add ${quantity}. Only ${product.stock - existingItem.quantity} available`, 'error');
+        return;
+      }
       setCart(cart.map(item =>
         item.product_id === product.id
-          ? { ...item, quantity: item.quantity + quantity, total: (item.quantity + quantity) * item.price }
+          ? { ...item, quantity: newQuantity, total: newQuantity * item.price }
           : item
       ));
     } else {
@@ -65,40 +87,23 @@ export function POS() {
     
     setSelectedProduct(0);
     setQuantity(1);
+    showToast(`Added ${product.name} to cart`, 'success');
   }
-
-  function removeFromCart(productId: number) {
-    setCart(cart.filter(item => item.product_id !== productId));
-  }
-
-  function updateQuantity(productId: number, newQuantity: number) {
-    if (newQuantity < 1) {
-      removeFromCart(productId);
-      return;
-    }
-    
-    const product = products.find(p => p.id === productId);
-    if (product && newQuantity > product.stock) {
-      setToast({ message: `Only ${product.stock} in stock`, type: 'error' });
-      return;
-    }
-    
-    setCart(cart.map(item =>
-      item.product_id === productId
-        ? { ...item, quantity: newQuantity, total: newQuantity * item.price }
-        : item
-    ));
-  }
-
-  const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
-  const tax = subtotal * 0.2;
-  const total = subtotal + tax;
 
   async function completeSale() {
-    if (cart.length === 0) return;
+    if (cart.length === 0) {
+      showToast('Cart is empty', 'error');
+      return;
+    }
+    
+    setLoading(true);
     
     try {
-      await invoke('create_sale', {
+      const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
+      const tax = subtotal * (vatRate / 100);
+      const total = subtotal + tax;
+      
+      const result = await invoke<{ success: boolean; sale_id: number; total: number }>('create_safe_sale', {
         sale: {
           items: cart.map(item => ({
             product_id: item.product_id,
@@ -111,11 +116,15 @@ export function POS() {
         }
       });
       
-      setToast({ message: `Sale completed! Total: ${formatCurrency(total)}`, type: 'success' });
-      setCart([]);
-      loadProducts();
+      if (result.success) {
+        showToast(`Sale completed! Total: ${formatCurrency(result.total)}`, 'success');
+        setCart([]);
+        await loadProducts();
+      }
     } catch (error) {
-      setToast({ message: 'Failed to complete sale', type: 'error' });
+      showToast(`Sale failed: ${error}`, 'error');
+    } finally {
+      setLoading(false);
     }
   }
 
@@ -126,7 +135,9 @@ export function POS() {
     }).format(amount);
   }
 
-  const selectedProductObj = products.find(p => p.id === selectedProduct);
+  const subtotal = cart.reduce((sum, item) => sum + item.total, 0);
+  const tax = subtotal * (vatRate / 100);
+  const total = subtotal + tax;
 
   return (
     <div className="dashboard">
@@ -153,10 +164,32 @@ export function POS() {
                   <div>
                     <div>{formatCurrency(item.total)}</div>
                     <div className="cart-actions">
-                      <button onClick={() => updateQuantity(item.product_id, item.quantity - 1)}>-</button>
+                      <button onClick={() => {
+                        const newQuantity = item.quantity - 1;
+                        if (newQuantity > 0) {
+                          setCart(cart.map(i =>
+                            i.product_id === item.product_id
+                              ? { ...i, quantity: newQuantity, total: newQuantity * i.price }
+                              : i
+                          ));
+                        } else {
+                          setCart(cart.filter(i => i.product_id !== item.product_id));
+                        }
+                      }}>-</button>
                       <span>{item.quantity}</span>
-                      <button onClick={() => updateQuantity(item.product_id, item.quantity + 1)}>+</button>
-                      <button onClick={() => removeFromCart(item.product_id)}>🗑️</button>
+                      <button onClick={() => {
+                        const product = products.find(p => p.id === item.product_id);
+                        if (product && item.quantity + 1 <= product.stock) {
+                          setCart(cart.map(i =>
+                            i.product_id === item.product_id
+                              ? { ...i, quantity: i.quantity + 1, total: (i.quantity + 1) * i.price }
+                              : i
+                          ));
+                        } else {
+                          showToast(`Only ${product?.stock} in stock`, 'error');
+                        }
+                      }}>+</button>
+                      <button onClick={() => setCart(cart.filter(i => i.product_id !== item.product_id))}>🗑️</button>
                     </div>
                   </div>
                 </div>
@@ -164,12 +197,16 @@ export function POS() {
               
               <div className="cart-totals">
                 <div>Subtotal: {formatCurrency(subtotal)}</div>
-                <div>VAT (20%): {formatCurrency(tax)}</div>
+                <div>VAT ({vatRate}%): {formatCurrency(tax)}</div>
                 <div className="total">Total: {formatCurrency(total)}</div>
               </div>
               
-              <button className="btn-primary" onClick={completeSale}>
-                Complete Sale
+              <button 
+                className="btn-primary" 
+                onClick={completeSale}
+                disabled={loading || cart.length === 0}
+              >
+                {loading ? 'Processing...' : 'Complete Sale'}
               </button>
             </>
           )}
@@ -179,7 +216,11 @@ export function POS() {
           <h3>Add Products</h3>
           <div className="form-group">
             <label>Select Product</label>
-            <select value={selectedProduct} onChange={(e) => setSelectedProduct(Number(e.target.value))}>
+            <select 
+              value={selectedProduct} 
+              onChange={(e) => setSelectedProduct(Number(e.target.value))}
+              autoFocus
+            >
               <option value={0}>Choose a product...</option>
               {products.map(product => (
                 <option key={product.id} value={product.id}>
@@ -189,30 +230,29 @@ export function POS() {
             </select>
           </div>
           
-          {selectedProductObj && (
+          {selectedProduct > 0 && (
             <>
               <div className="form-group">
                 <label>Quantity</label>
                 <input
                   type="number"
                   min="1"
-                  max={selectedProductObj.stock}
                   value={quantity}
                   onChange={(e) => setQuantity(Number(e.target.value))}
+                  onKeyPress={(e) => {
+                    if (e.key === 'Enter') {
+                      addToCart();
+                    }
+                  }}
                 />
-              </div>
-              
-              <div className="product-preview">
-                <div>Price: {formatCurrency(selectedProductObj.price)}</div>
-                <div>Total: {formatCurrency(selectedProductObj.price * quantity)}</div>
               </div>
               
               <button 
                 className="btn-primary" 
                 onClick={addToCart}
-                disabled={!selectedProduct || quantity < 1}
+                disabled={selectedProduct === 0}
               >
-                Add to Cart
+                Add to Cart (Enter)
               </button>
             </>
           )}
