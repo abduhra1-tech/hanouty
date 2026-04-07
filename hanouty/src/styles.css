@@ -525,3 +525,86 @@ body {
   font-weight: 600;
   color: var(--dark);
 }
+
+/* Receipt Styles */
+.receipt-content {
+  font-family: 'Courier New', monospace;
+  font-size: 0.875rem;
+  line-height: 1.4;
+}
+
+.receipt-header {
+  text-align: center;
+  margin-bottom: 1rem;
+}
+
+.receipt-header h3 {
+  font-size: 1.25rem;
+  margin-bottom: 0.25rem;
+}
+
+.receipt-header p {
+  color: var(--secondary);
+}
+
+.receipt-info {
+  margin-bottom: 1rem;
+}
+
+.receipt-info p {
+  margin: 0.25rem 0;
+}
+
+.divider {
+  border-top: 1px dashed var(--border);
+  margin: 0.75rem 0;
+}
+
+.receipt-item {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: space-between;
+  margin-bottom: 0.5rem;
+}
+
+.receipt-item > div:first-child {
+  font-weight: 500;
+}
+
+.receipt-item > div:nth-child(2) {
+  color: var(--secondary);
+}
+
+.item-total {
+  width: 100%;
+  text-align: right;
+  font-weight: 600;
+}
+
+.receipt-totals {
+  margin-top: 1rem;
+}
+
+.total-line {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.25rem 0;
+}
+
+.grand-total {
+  font-size: 1.125rem;
+  font-weight: 700;
+  color: var(--primary);
+  border-top: 2px solid var(--border);
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+}
+
+.receipt-footer {
+  text-align: center;
+  margin-top: 1rem;
+}
+
+.receipt-footer p {
+  margin: 0.25rem 0;
+}
