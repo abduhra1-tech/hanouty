@@ -318,7 +318,7 @@ export function POS() {
           isOpen={showReceipt}
           onClose={() => setShowReceipt(false)}
           receipt={lastReceipt}
-          shopInfo={shopInfo}
+          shopInfo={shopInfo || { name: 'Hanouty', address: '', phone: '', email: '' }}
         />
       )}
     </div>
