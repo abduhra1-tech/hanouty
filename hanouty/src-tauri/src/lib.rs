@@ -19,6 +19,28 @@ pub struct Sale {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+pub struct SaleItem {
+    pub product_id: i32,
+    pub product_name: String,
+    pub quantity: i32,
+    pub price: f64,
+    pub total: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct NewSale {
+    pub items: Vec<SaleItem>,
+    pub total: f64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct SaleHistoryItem {
+    pub id: i32,
+    pub total: f64,
+    pub date: String,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
 pub struct Setting {
     pub key: String,
     pub value: String,
@@ -108,6 +130,55 @@ fn add_sale(total: f64) -> Result<(), String> {
 }
 
 #[tauri::command]
+fn create_sale(sale: NewSale) -> Result<(), String> {
+    let conn = get_conn()?;
+    
+    conn.execute(
+        "INSERT INTO sales (total) VALUES (?1)",
+        params![sale.total],
+    ).map_err(|e| e.to_string())?;
+    
+    let sale_id = conn.last_insert_rowid();
+    
+    for item in sale.items {
+        conn.execute(
+            "INSERT INTO sale_items (sale_id, product_id, quantity, price_at_sale) 
+             VALUES (?1, ?2, ?3, ?4)",
+            params![sale_id, item.product_id, item.quantity, item.price],
+        ).map_err(|e| e.to_string())?;
+        
+        conn.execute(
+            "UPDATE products SET stock = stock - ?1 WHERE id = ?2",
+            params![item.quantity, item.product_id],
+        ).map_err(|e| e.to_string())?;
+    }
+    
+    Ok(())
+}
+
+#[tauri::command]
+fn get_sales_history() -> Result<Vec<SaleHistoryItem>, String> {
+    let conn = get_conn()?;
+    let mut stmt = conn.prepare(
+        "SELECT id, total, sale_date FROM sales ORDER BY sale_date DESC LIMIT 50"
+    ).map_err(|e| e.to_string())?;
+    
+    let sales = stmt.query_map([], |row| {
+        Ok(SaleHistoryItem {
+            id: row.get(0)?,
+            total: row.get(1)?,
+            date: row.get(2)?,
+        })
+    }).map_err(|e| e.to_string())?;
+    
+    let mut result = Vec::new();
+    for sale in sales {
+        result.push(sale.map_err(|e| e.to_string())?);
+    }
+    Ok(result)
+}
+
+#[tauri::command]
 fn get_settings() -> Result<Vec<Setting>, String> {
     let conn = get_conn()?;
     let mut stmt = conn.prepare("SELECT key, value FROM settings")
@@ -156,6 +227,8 @@ pub fn run() {
             delete_product,
             get_sales,
             add_sale,
+            create_sale,
+            get_sales_history,
             get_settings,
             update_setting
         ])
