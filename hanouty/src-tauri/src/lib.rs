@@ -15,8 +15,7 @@ pub struct Product {
 pub struct Sale {
     pub id: i32,
     pub total: f64,
-    pub items: i32,
-    pub created_at: String,
+    pub sale_date: String,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -81,14 +80,13 @@ fn delete_product(id: i32) -> Result<(), String> {
 #[tauri::command]
 fn get_sales() -> Result<Vec<Sale>, String> {
     let conn = get_conn()?;
-    let mut stmt = conn.prepare("SELECT id, total, items, created_at FROM sales ORDER BY id DESC")
+    let mut stmt = conn.prepare("SELECT id, total, sale_date FROM sales ORDER BY id DESC")
         .map_err(|e| e.to_string())?;
     let sales = stmt.query_map([], |row| {
         Ok(Sale {
             id: row.get(0)?,
             total: row.get(1)?,
-            items: row.get(2)?,
-            created_at: row.get(3)?,
+            sale_date: row.get(2)?,
         })
     }).map_err(|e| e.to_string())?;
     
@@ -100,11 +98,11 @@ fn get_sales() -> Result<Vec<Sale>, String> {
 }
 
 #[tauri::command]
-fn add_sale(total: f64, items: i32) -> Result<(), String> {
+fn add_sale(total: f64) -> Result<(), String> {
     let conn = get_conn()?;
     conn.execute(
-        "INSERT INTO sales (total, items) VALUES (?1, ?2)",
-        params![total, items],
+        "INSERT INTO sales (total) VALUES (?1)",
+        params![total],
     ).map_err(|e| e.to_string())?;
     Ok(())
 }

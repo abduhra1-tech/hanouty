@@ -10,8 +10,7 @@ export interface Product {
 export interface Sale {
   id: number;
   total: number;
-  items: number;
-  created_at: string;
+  sale_date: string;
 }
 
 export interface Setting {
@@ -39,8 +38,8 @@ export async function getSales(): Promise<Sale[]> {
   return invoke<Sale[]>("get_sales");
 }
 
-export async function addSale(total: number, items: number): Promise<void> {
-  await invoke("add_sale", { total, items });
+export async function addSale(total: number): Promise<void> {
+  await invoke("add_sale", { total });
 }
 
 export async function getSettings(): Promise<Setting[]> {

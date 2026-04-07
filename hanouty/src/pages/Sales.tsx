@@ -1,5 +1,11 @@
 import { useState, useEffect } from 'react'
-import { getSales, addSale, Sale } from '../lib/db'
+import { invoke } from '@tauri-apps/api/core'
+
+interface Sale {
+  id: number;
+  total: number;
+  sale_date: string;
+}
 
 export function Sales() {
   const [sales, setSales] = useState<Sale[]>([])
@@ -11,7 +17,7 @@ export function Sales() {
 
   const loadSales = async () => {
     try {
-      const data = await getSales()
+      const data = await invoke<Sale[]>('get_sales')
       setSales(data)
     } catch (error) {
       console.error('Failed to load sales:', error)
@@ -20,42 +26,45 @@ export function Sales() {
     }
   }
 
-  const handleAddSale = async () => {
-    await addSale(0, 0)
-    loadSales()
-  }
+  if (loading) return <div className="dashboard">Loading sales...</div>
 
   return (
     <div className="dashboard">
-      <h2>💰 Sales</h2>
-      <button style={{ marginBottom: '1rem' }} onClick={handleAddSale}>+ New Sale</button>
-      {loading ? (
-        <p>Loading...</p>
+      <div className="dashboard-header">
+        <h2>💰 Sales</h2>
+      </div>
+      
+      {sales.length === 0 ? (
+        <div className="empty-state">
+          <div className="empty-state-icon">💰</div>
+          <h3>No sales yet</h3>
+          <p>Your sales will appear here once you start making transactions</p>
+        </div>
       ) : (
-        <table className="products-table">
-          <thead>
-            <tr>
-              <th>ID</th>
-              <th>Date</th>
-              <th>Total (MAD)</th>
-              <th>Items</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {sales.map(sale => (
-              <tr key={sale.id}>
-                <td>{sale.id}</td>
-                <td>{sale.created_at.split('T')[0]}</td>
-                <td>{sale.total}</td>
-                <td>{sale.items}</td>
-                <td>
-                  <button>View Receipt</button>
-                </td>
+        <div className="products-table-container">
+          <table className="products-table">
+            <thead>
+              <tr>
+                <th>ID</th>
+                <th>Date</th>
+                <th>Total (MAD)</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {sales.map(sale => (
+                <tr key={sale.id}>
+                  <td>{sale.id}</td>
+                  <td>{sale.sale_date.split('T')[0]}</td>
+                  <td>{sale.total.toFixed(2)}</td>
+                  <td>
+                    <button className="btn-icon">🧾</button>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       )}
     </div>
   )

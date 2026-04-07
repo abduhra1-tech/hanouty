@@ -26,7 +26,7 @@ export function Dashboard() {
       
       const today = new Date().toISOString().split('T')[0]
       const todaySalesTotal = sales
-        .filter(s => s.created_at.startsWith(today))
+        .filter(s => s.sale_date.startsWith(today))
         .reduce((sum, s) => sum + s.total, 0)
       
       const lowStock = products.filter(p => p.stock < 5).length
