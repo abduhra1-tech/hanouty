@@ -163,7 +163,10 @@ export function POS() {
           vat_rate: vatRate,
           vat_amount: tax,
           total: total,
-          date: new Date().toISOString()
+          date: new Intl.DateTimeFormat('fr-MA', {
+            dateStyle: 'short',
+            timeStyle: 'short'
+          }).format(new Date())
         });
         setShowReceipt(true);
         setCart([]);
