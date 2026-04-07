@@ -407,3 +407,121 @@ body {
     padding: 0.75rem;
   }
 }
+
+/* POS Styles */
+.pos-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 2rem;
+}
+
+.pos-cart,
+.pos-products {
+  background: var(--light);
+  border-radius: 16px;
+  padding: 1.5rem;
+}
+
+.pos-cart h3,
+.pos-products h3 {
+  font-size: 1.125rem;
+  font-weight: 600;
+  color: var(--dark);
+  margin-bottom: 1rem;
+  padding-bottom: 0.75rem;
+  border-bottom: 2px solid var(--border);
+}
+
+.cart-item {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  padding: 1rem;
+  background: white;
+  border-radius: 8px;
+  margin-bottom: 0.75rem;
+  border: 1px solid var(--border);
+}
+
+.cart-item strong {
+  display: block;
+  color: var(--dark);
+}
+
+.cart-item > div:first-child > div {
+  font-size: 0.875rem;
+  color: var(--secondary);
+}
+
+.cart-item > div:last-child {
+  text-align: right;
+}
+
+.cart-item > div:last-child > div:first-child {
+  font-weight: 600;
+  color: var(--dark);
+}
+
+.cart-actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  margin-top: 0.5rem;
+}
+
+.cart-actions button {
+  width: 28px;
+  height: 28px;
+  padding: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+.cart-actions span {
+  min-width: 24px;
+  text-align: center;
+  font-weight: 600;
+}
+
+.cart-totals {
+  margin-top: 1.5rem;
+  padding-top: 1rem;
+  border-top: 2px solid var(--border);
+}
+
+.cart-totals > div {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.5rem 0;
+  color: var(--secondary);
+}
+
+.cart-totals .total {
+  font-size: 1.25rem;
+  font-weight: 700;
+  color: var(--dark);
+  border-top: 1px solid var(--border);
+  margin-top: 0.5rem;
+  padding-top: 0.75rem;
+}
+
+.product-preview {
+  background: white;
+  border-radius: 8px;
+  padding: 1rem;
+  margin: 1rem 0;
+  border: 1px solid var(--border);
+}
+
+.product-preview > div {
+  display: flex;
+  justify-content: space-between;
+  padding: 0.25rem 0;
+  color: var(--secondary);
+}
+
+.product-preview > div:first-child {
+  font-weight: 600;
+  color: var(--dark);
+}
