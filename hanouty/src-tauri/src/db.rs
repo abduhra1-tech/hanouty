@@ -31,4 +31,5 @@ CREATE TABLE IF NOT EXISTS settings (
 INSERT OR IGNORE INTO settings (key, value) VALUES ('shop_name', 'Hanouty');
 INSERT OR IGNORE INTO settings (key, value) VALUES ('language', 'fr');
 INSERT OR IGNORE INTO settings (key, value) VALUES ('currency', 'MAD');
+INSERT OR IGNORE INTO settings (key, value) VALUES ('vat_rate', '20');
 "#;
