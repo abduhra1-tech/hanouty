@@ -206,6 +206,18 @@ fn get_sales_history() -> Result<Vec<SaleHistoryItem>, String> {
 }
 
 #[tauri::command]
+fn get_vat_rate() -> Result<f64, String> {
+    let conn = Connection::open("hanouty.db").map_err(|e| e.to_string())?;
+    let vat: String = conn.query_row(
+        "SELECT value FROM settings WHERE key = 'vat_rate'",
+        [],
+        |row| row.get(0)
+    ).unwrap_or_else(|_| "20".to_string());
+    
+    Ok(vat.parse::<f64>().unwrap_or(20.0))
+}
+
+#[tauri::command]
 fn get_settings() -> Result<Vec<Setting>, String> {
     let conn = get_conn()?;
     let mut stmt = conn.prepare("SELECT key, value FROM settings")
@@ -256,6 +268,7 @@ pub fn run() {
             add_sale,
             create_sale,
             get_sales_history,
+            get_vat_rate,
             get_settings,
             update_setting
         ])
