@@ -57,3 +57,75 @@ export async function getDb(): Promise<Database> {
   }
   return db;
 }
+
+export interface Product {
+  id: number;
+  name: string;
+  price: number;
+  stock: number;
+  created_at?: string;
+}
+
+export interface Sale {
+  id: number;
+  total: number;
+  items: number;
+  created_at: string;
+}
+
+export async function getProducts(): Promise<Product[]> {
+  const database = await getDb();
+  return database.select<Product[]>("SELECT * FROM products ORDER BY id DESC");
+}
+
+export async function addProduct(name: string, price: number, stock: number = 0): Promise<void> {
+  const database = await getDb();
+  await database.execute(
+    "INSERT INTO products (name, price, stock) VALUES (?, ?, ?)",
+    [name, price, stock]
+  );
+}
+
+export async function updateProduct(id: number, name: string, price: number, stock: number): Promise<void> {
+  const database = await getDb();
+  await database.execute(
+    "UPDATE products SET name = ?, price = ?, stock = ? WHERE id = ?",
+    [name, price, stock, id]
+  );
+}
+
+export async function deleteProduct(id: number): Promise<void> {
+  const database = await getDb();
+  await database.execute("DELETE FROM products WHERE id = ?", [id]);
+}
+
+export async function getSales(): Promise<Sale[]> {
+  const database = await getDb();
+  return database.select<Sale[]>("SELECT * FROM sales ORDER BY id DESC");
+}
+
+export async function addSale(total: number, items: number): Promise<void> {
+  const database = await getDb();
+  await database.execute(
+    "INSERT INTO sales (total, items) VALUES (?, ?)",
+    [total, items]
+  );
+}
+
+export interface Setting {
+  key: string;
+  value: string;
+}
+
+export async function getSettings(): Promise<Setting[]> {
+  const database = await getDb();
+  return database.select<Setting[]>("SELECT * FROM settings");
+}
+
+export async function updateSetting(key: string, value: string): Promise<void> {
+  const database = await getDb();
+  await database.execute(
+    "INSERT OR REPLACE INTO settings (key, value) VALUES (?, ?)",
+    [key, value]
+  );
+}

@@ -1,5 +1,23 @@
 mod db;
 
+use serde::{Deserialize, Serialize};
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Product {
+    pub id: i64,
+    pub name: String,
+    pub price: f64,
+    pub stock: i64,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+pub struct Sale {
+    pub id: i64,
+    pub total: f64,
+    pub items: i64,
+    pub created_at: String,
+}
+
 #[tauri::command]
 fn greet(name: &str) -> String {
     format!("Hello, {}! You've been greeted from Rust!", name)
