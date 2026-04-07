@@ -21,9 +21,15 @@ interface ReceiptModalProps {
   isOpen: boolean;
   onClose: () => void;
   receipt: ReceiptData | null;
+  shopInfo: {
+    name: string;
+    address: string;
+    phone: string;
+    email: string;
+  };
 }
 
-export function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalProps) {
+export function ReceiptModal({ isOpen, onClose, receipt, shopInfo }: ReceiptModalProps) {
   const printRef = useRef<HTMLDivElement>(null);
 
   if (!isOpen || !receipt) return null;
@@ -110,8 +116,10 @@ export function ReceiptModal({ isOpen, onClose, receipt }: ReceiptModalProps) {
         <div className="modal-body">
           <div ref={printRef} className="receipt-content">
             <div className="receipt-header">
-              <h3>🏪 HANOUTY</h3>
-              <p>Smart Retail System</p>
+              <h3>🏪 {shopInfo.name}</h3>
+              <p>{shopInfo.address}</p>
+              <p>📞 {shopInfo.phone}</p>
+              <p>✉️ {shopInfo.email}</p>
               <p>------------------</p>
             </div>
             

@@ -37,10 +37,17 @@ export function POS() {
   const [toast, setToast] = useState<{ message: string; type: string } | null>(null);
   const [showReceipt, setShowReceipt] = useState(false);
   const [lastReceipt, setLastReceipt] = useState<ReceiptData | null>(null);
+  const [shopInfo, setShopInfo] = useState({
+    name: 'Hanouty',
+    address: '',
+    phone: '',
+    email: ''
+  });
 
   useEffect(() => {
     loadProducts();
     loadVatRate();
+    loadShopInfo();
   }, []);
 
   async function loadProducts() {
@@ -58,6 +65,20 @@ export function POS() {
       setVatRate(rate);
     } catch (error) {
       console.error('Failed to load VAT rate:', error);
+    }
+  }
+
+  async function loadShopInfo() {
+    try {
+      const info = await invoke<any>('get_shop_settings');
+      setShopInfo({
+        name: info.shop_name || 'Hanouty',
+        address: info.shop_address || '',
+        phone: info.shop_phone || '',
+        email: info.shop_email || ''
+      });
+    } catch (error) {
+      console.error('Failed to load shop info:', error);
     }
   }
 
@@ -297,6 +318,7 @@ export function POS() {
           isOpen={showReceipt}
           onClose={() => setShowReceipt(false)}
           receipt={lastReceipt}
+          shopInfo={shopInfo}
         />
       )}
     </div>
